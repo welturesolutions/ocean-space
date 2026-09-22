@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import mail from "@sendgrid/mail";
+import { Resend } from "resend";
 
-// Set the SendGrid API key
-mail.setApiKey(process.env.SENDGRID_API_KEY || "");
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req) {
   try {
@@ -20,15 +19,13 @@ export async function POST(req) {
       <i>This email was sent from Inquiry Form on <a href="https://www.osbpo.com//contact-us">Ocean Space</a></i>
     `;
 
-    const data = {
+    await resend.emails.send({
       to: "enquiries@osbpo.com",
-      from: "noreply@twg2c2p.com",
+      from: "enquiries@osbpo.com",
       subject: "Inquiry Form",
       text: message,
       html: message.replace(/\r\n/g, "<br>"),
-    };
-
-    await mail.send(data);
+    });
 
     return NextResponse.json({
       status: "success",
@@ -36,13 +33,13 @@ export async function POST(req) {
     });
   } catch (error) {
     console.error(
-      "SendGrid Error:",
-      error.response ? error.response.body : error
+      "Resend Error:",
+      error.response ? error.response.body : error,
     );
 
     return NextResponse.json(
       { status: "error", message: `Message failed: ${error.message}` },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
