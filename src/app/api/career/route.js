@@ -84,8 +84,8 @@ export async function POST(req) {
     `;
 
     await resend.emails.send({
-      to: "careers@osbpo.com",
-      from: "careers@osbpo.com",
+      to: "enquiries@osbpo.com",
+      from: "enquiries@osbpo.com",
       subject: `Career Application from ${firstName} ${lastName}`,
       text: message,
       html: message.replace(/\r\n/g, "<br>"),
