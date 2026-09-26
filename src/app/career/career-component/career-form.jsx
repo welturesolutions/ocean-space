@@ -28,6 +28,9 @@ export default function CareerForm() {
 
   const [countryError, setCountryError] = useState(false);
   const [resumeError, setResumeError] = useState(false);
+  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formValues, setFormValues] = useState({
     firstName: "",
@@ -46,7 +49,7 @@ export default function CareerForm() {
     }));
   };
 
-  const onCareerFormSubmit = (e) => {
+  const onCareerFormSubmit = async (e) => {
     e.preventDefault();
 
     if (!formValues.country) {
@@ -63,7 +66,47 @@ export default function CareerForm() {
       setResumeError(false);
     }
 
-    console.log("submited data", formValues);
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("firstName", formValues.firstName);
+      formData.append("lastName", formValues.lastName);
+      formData.append("emailAddress", formValues.emailAddress);
+      formData.append("phoneNumber", formValues.phoneNumber);
+      formData.append("country", formValues.country);
+      formData.append("resume", formValues.resume);
+
+      const response = await fetch("/api/career", {
+        method: "POST",
+        body: formData,
+      });
+
+      const text = await response.text();
+      const result = text ? JSON.parse(text) : { message: "", status: "error" };
+
+      setMessage(result.message);
+      setStatus(result.status);
+
+      if (result.status === "success") {
+        setFormValues({
+          firstName: "",
+          lastName: "",
+          emailAddress: "",
+          phoneNumber: "",
+          country: "",
+          resume: "",
+        });
+        document.getElementById("file-label").textContent =
+          "Upload a file or drag and drop here";
+      }
+    } catch (error) {
+      console.error("Fetch Error:", error);
+      setMessage("An error occurred while submitting the form.");
+      setStatus("error");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -233,6 +276,8 @@ export default function CareerForm() {
                   type="file"
                   name="resume"
                   className="hidden"
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
                   onChange={(e) => {
                     const file = e.target.files[0];
                     if (file) {
@@ -273,9 +318,10 @@ export default function CareerForm() {
             <div className="text-left md:col-span-2">
               <button
                 type="submit"
-                className="bg-[#60CDFF] hover:opacity-[0.8] rounded-2xl max-sm:w-full max-sm:px-[25px] md:w-auto px-[30px] py-[10px] text-[#002991] flex items-center gap-[10px] justify-center font-[700] btn-shadow cursor-pointer"
+                disabled={isSubmitting}
+                className="bg-[#60CDFF] hover:opacity-[0.8] rounded-2xl max-sm:w-full max-sm:px-[25px] md:w-auto px-[30px] py-[10px] text-[#002991] flex items-center gap-[10px] justify-center font-[700] btn-shadow cursor-pointer disabled:opacity-60"
               >
-                Submit Application
+                {isSubmitting ? "Submitting..." : "Submit Application"}
                 <svg
                   width="8"
                   height="13"
@@ -291,6 +337,16 @@ export default function CareerForm() {
               </button>
             </div>
           </form>
+
+          {message?.length > 0 && (
+            <div
+              className={`pt-4 text-sm font-[500] ${
+                status === "success" ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              <span>{message}</span>
+            </div>
+          )}
         </motion.div>
       </div>
     </div>
